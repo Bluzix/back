@@ -6,7 +6,7 @@ let canvas,
     enemy,
     foodArray = [];
 
-class Player{    
+class Player{
     constructor(){
         this.width = 50;
         this.height = 50;
@@ -43,7 +43,7 @@ class Player{
         //     ctx.strokeStyle = 'green';
         //     ctx.stroke();
         // }
-        
+
     }
 
     update(){
@@ -56,15 +56,25 @@ class Player{
         }
         if(this.y + this.height > canvas.height){
             this.jumped = false;
+            // to not get stuck in the ground
+            this.y = canvas.height - this.height;
         }
         this.x += this.dx;
+
+        // keep within the canvas
+        if (this.x < 0){
+          this.x = 0;
+        }
+        else if (this.x + this.width > canvas.width){
+          this.x = canvas.width - this.width;
+        }
     }
 
     moveRight(){
         this.dx += 3;
         this.right = true;
-        
-        
+
+
     }
     moveLeft(){
         this.dx += -3;
@@ -79,7 +89,7 @@ class Player{
         this.left = false;
     }
     jump(){
-        
+
         this.dy = -20;
         this.jumped = true;
     }
@@ -141,7 +151,7 @@ function hitEnemy(dot, mouse){
     }else{
         right = false;
     }
-    
+
     if(mouse.x < dot.x + dot.width){
         left = true;
     }else{
@@ -267,4 +277,3 @@ Maybe a character name
 
 
 */
-
