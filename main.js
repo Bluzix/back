@@ -106,7 +106,7 @@ class Player{
         this.left = false;
     }
     jump(){
-        this.dy = -20;
+        this.dy = -10;
         this.jumped = true;
     }
 }
