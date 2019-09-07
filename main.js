@@ -37,6 +37,11 @@ class Player{
     }
 
     draw(){
+        //we need to draw player stats
+        ctx.font = "30px Arial";
+        ctx.fillText("Health: " + this.health, 10, 50); 
+        ctx.fillText("Hunger: " + this.hunger, 10, 100); 
+
         ctx.beginPath();
         ctx.rect(this.x, this.y, this.width, this.height);
         ctx.fillStyle = 'red';
@@ -63,6 +68,8 @@ class Player{
     }
 
     update(){
+        //drop hunger by one
+        this.hunger-= 0.05;
         if(this.y + this.height < ground){
             this.dy += gravity;
             this.y += this.dy;
@@ -207,6 +214,7 @@ function update(dt){
     for (let i = 0; i < foodArray.length; i++) {
         if(hitDot(player, foodArray[i])){
             foodArray.splice(i, 1);
+            player.hunger+=2;        
         }
     }
     for (let i = 0; i < enemyArray.length; i++) {
@@ -226,6 +234,15 @@ function render(){
     ctx.rect(canvas.width/2, ground-100-ballRadius, canvas.width/4, 100+ballRadius*2);
     ctx.fillStyle = 'green';
     ctx.fill();
+
+
+    //draw burrow
+    ctx.closePath();
+    ctx.beginPath();
+    ctx.rect(0, ground, canvas.width, canvas.height);
+    ctx.fillStyle = 'brown';
+    ctx.fill();
+
     player.draw();
     for (let i = 0; i < foodArray.length; i++) {
         foodArray[i].draw();
@@ -256,9 +273,9 @@ window.onload = function(){
         if(foodArray.length < 50){
             console.log(Math.random() * 100 + 350);
             
-            foodArray.push(new Food(randomInt(canvas.width/2, canvas.width/1.35), randomInt(ground-100,ground), ballRadius));
+            foodArray.push(new Food(randomInt(canvas.width/2, canvas.width/1.35), randomInt(ground-100,ground-20), ballRadius));
         }
-    }, 1000);
+    }, 500);
 
     setInterval(()=>{
         //also add enemies, maybe a different interval        
