@@ -2,7 +2,8 @@ let canvas,
     player,
     ctx,
     foodArray = [],
-    enemyArray = [];
+    enemyArray = [],
+    lastUpdate = Date.now();
 
 canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
@@ -13,6 +14,9 @@ ctx = canvas.getContext("2d");
 const gravity = 0.8;
 const ground = canvas.height/1.3;//use this for the land above the burrow
 const bearSpeed = 5;
+const leftBounds = -1000;
+const rightBounds = canvas.width + 1000;
+const ballRadius = 10;
 
 
 
@@ -28,6 +32,8 @@ class Player{
         this.left = false;
         this.jumped = false;
         this.spikeSize = 30;
+        this.health = 5;
+        this.hunger = 100;
     }
 
     draw(){
@@ -57,17 +63,17 @@ class Player{
     }
 
     update(){
-        if(this.y + this.height < canvas.height){
+        if(this.y + this.height < ground){
             this.dy += gravity;
             this.y += this.dy;
         }
         if(this.jumped){
             this.y += this.dy;
         }
-        if(this.y + this.height > canvas.height){
+        if(this.y + this.height > ground){
             this.jumped = false;
             // to not get stuck in the ground
-            this.y = canvas.height - this.height;
+            this.y = ground - this.height;
         }
         this.x += this.dx;
 
@@ -80,20 +86,16 @@ class Player{
         }
     }
 
-    moveRight(){
+    moveRight(dt){
         this.dx += 3;
-        this.right = true;
     }
-    moveLeft(){
+    moveLeft(dt){
         this.dx += -3;
-        this.left = true;
     }
     stopRight(){
-        this.dx += -3
         this.right = false;
     }
-    stopLeft(){
-        this.dx += 3;
+    stopLeft(){        
         this.left = false;
     }
     jump(){
@@ -107,7 +109,7 @@ class Enemy{
         this.width = 100;
         this.height = 100;
         this.x = x;
-        this.y = canvas.height - this.height;
+        this.y = ground - this.height;
         this.dx = dx;
         this.dy = 0;
     }
@@ -115,7 +117,7 @@ class Enemy{
     draw(){
         ctx.beginPath();
         ctx.rect(this.x,this.y,this.width,this.height);
-        ctx.fillStyle = 'blue';
+        ctx.fillStyle = 'black';
         ctx.strokeStyle = 'blue';
         ctx.fill();
     }
@@ -134,9 +136,13 @@ class Food{
     draw(){
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-        ctx.fillStyle = 'black';
+        ctx.fillStyle = 'purple';
         ctx.fill();
     }
+}
+
+function randomInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function hitDot(mouse, dot){
@@ -184,28 +190,42 @@ function hitEnemy(dot, mouse){
     }
 }
 
-function update(){
+function update(dt){
+
+    //player updates to use delta time
+    if(player.right){
+        player.x += 1/2 * dt;
+    }
+    if(player.left){
+        player.x -= 1/2 * dt;
+    }
+    if(!player.left && !player.right){
+        player.dx = 0;
+    }
     player.update();
     //check if hit food
     for (let i = 0; i < foodArray.length; i++) {
         if(hitDot(player, foodArray[i])){
             foodArray.splice(i, 1);
         }
-    }        
-
+    }
     for (let i = 0; i < enemyArray.length; i++) {
         enemyArray[i].update();
         //check if hit enemy
-        if(hitEnemy(player, enemyArray[i]) || enemyArray[i].x > canvas.height + 1000 || enemyArray[i].x < -1500){
+        if(hitEnemy(player, enemyArray[i]) || enemyArray[i].x > rightBounds || enemyArray[i].x < leftBounds){
             enemyArray.splice(i, 1);
-            console.log(enemyArray);
-            
         }
     }
 }
 
-function draw(){
+function render(){
     ctx.clearRect(0,0,canvas.width, canvas.height);
+    //draw foodarea
+    ctx.closePath();
+    ctx.beginPath();
+    ctx.rect(canvas.width/2, ground-100-ballRadius, canvas.width/4, 100+ballRadius*2);
+    ctx.fillStyle = 'green';
+    ctx.fill();
     player.draw();
     for (let i = 0; i < foodArray.length; i++) {
         foodArray[i].draw();
@@ -216,8 +236,12 @@ function draw(){
 }
 
 function animate(){
-    draw();
-    update();
+    let now = Date.now();
+    let dt = now - lastUpdate;
+    lastUpdate = now;
+
+    update(dt);
+    render(dt);
     requestAnimationFrame(animate);
 }
 
@@ -225,31 +249,37 @@ function animate(){
 window.onload = function(){
     player = new Player();
     animate();
-    //add food
+    //Important!
+    //creating a setinterval is bad because its continously creating setIntervals
+    //maybe we use delta time in the update function to create these objects
     setInterval(()=>{
-        foodArray.push(new Food(Math.random() * canvas.width/2 + canvas.width/2, Math.random() * 100 + 350, 10));
+        if(foodArray.length < 50){
+            console.log(Math.random() * 100 + 350);
+            
+            foodArray.push(new Food(randomInt(canvas.width/2, canvas.width/1.35), randomInt(ground-100,ground), ballRadius));
+        }
     }, 1000);
 
     setInterval(()=>{
         //also add enemies, maybe a different interval        
         //we need to check where the player is
         //get random position for either side of the screen
-        let leftRandom = Math.random() * -100 + -1000;
-        let rightRandom = Math.random() * canvas.width + (canvas.width+500);
-        if(Math.random() > 0.5){            
-            enemyArray.push(new Enemy(leftRandom, 5));
-        }else{
-            enemyArray.push(new Enemy(rightRandom, -5));
+        if(enemyArray.length < 2){
+            if(randomInt(0,1) == 0){
+                enemyArray.push(new Enemy(randomInt(leftBounds, 0), 5));
+            }else{
+                enemyArray.push(new Enemy(randomInt(canvas.width, rightBounds), -5));
+            }
         }
     }, 5000);
 };
 
 document.addEventListener('keydown', (e)=>{
     if(e.keyCode == 39 && player.right == false){//right
-        player.moveRight();
+        player.right = true;
     }
     if(e.keyCode == 37 && player.left == false){//left
-        player.moveLeft();
+        player.left = true;
     }
     if(e.keyCode == 38 && player.jumped == false){//up
         player.jump();
