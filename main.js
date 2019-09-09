@@ -3,7 +3,11 @@ let canvas,
     ctx,
     foodArray = [],
     enemyArray = [],
+    familyArray = [],
     lastUpdate = Date.now();
+
+var porcupine = new Image();
+porcupine.src = "porcupine.png";
 
 canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
@@ -28,7 +32,9 @@ class Player{
         this.y = canvas.height - this.height;
         this.dx = 0;
         this.dy = 0;
-        this.right = false;
+        this.moveRight = false;
+        this.moveLeft = false;
+        this.right = true;
         this.left = false;
         this.jumped = false;
         this.spikeSize = 30;
@@ -44,19 +50,24 @@ class Player{
 
         ctx.beginPath();
         ctx.rect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = 'red';
-        ctx.fill();
-        // if(this.right){
-        //     ctx.rect(this.x - this.spikeSize, this.y, this.spikeSize, this.height);
-        //     ctx.strokeStyle = 'green';
-        //     ctx.stroke();
-        // }
-        // else if(this.left){
-        //     ctx.rect(this.x + this.width, this.y, this.spikeSize, this.height);
-        //     ctx.strokeStyle = 'green';
-        //     ctx.stroke();
-        // }
+        ctx.strokeStyle = 'red';
+        ctx.stroke();
+        
 
+        if(this.right){
+            //context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+            ctx.drawImage(porcupine,0, 0, 256, 256, this.x-this.width+10, this.y-this.height+5,this.width*3,this.height*3);
+            // ctx.rect(this.x - this.spikeSize, this.y, this.spikeSize, this.height);
+            // ctx.strokeStyle = 'green';
+            // ctx.stroke();
+        }
+        else if(this.left){
+            //context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+            ctx.drawImage(porcupine, 256, 0, 512, 256, this.x-this.width-10, this.y-this.height+5, this.width*6, this.height*3);
+            // ctx.rect(this.x + this.width, this.y, this.spikeSize, this.height);
+            // ctx.strokeStyle = 'green';
+            // ctx.stroke();
+        }
         // else{
         //     ctx.rect(this.x, this.y, this.width, -this.spikeSize);
         //     ctx.rect(this.x - this.spikeSize, this.y, this.spikeSize, this.height);
@@ -91,19 +102,6 @@ class Player{
         else if (this.x + this.width > canvas.width){
           this.x = canvas.width - this.width;
         }
-    }
-
-    moveRight(dt){
-        this.dx += 3;
-    }
-    moveLeft(dt){
-        this.dx += -3;
-    }
-    stopRight(){
-        this.right = false;
-    }
-    stopLeft(){        
-        this.left = false;
     }
     jump(){
         this.dy = -10;
@@ -148,6 +146,24 @@ class Food{
     }
 }
 
+class Family{
+    constructor(){
+        this.width = 20;
+        this.height = 20;
+        this.x = canvas.width/1.2;
+        this.y = canvas.height - 40;
+        this.hunger = 100;
+        this.health = 1;
+    }
+
+    draw(){
+        ctx.beginPath();
+        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.fillStyle = 'green';
+        ctx.fill();
+    }
+}
+
 function randomInt(min, max){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -158,55 +174,31 @@ function hitDot(mouse, dot){
         mouse.y < dot.y + dot.radius &&//top of square bottom of dot
         mouse.x < dot.x + dot.radius &&
         mouse.y + mouse.height > dot.y + dot.radius){
-            console.log('eat food');
             return true;
     }
 }
 
 //this function shouldnt return true or false but return the side the collision happened
-function hitEnemy(dot, mouse){
-    let left,right,top,bottom;
-    if(mouse.x + mouse.width > dot.x - dot.width){
-        right = true;
-    }else{
-        right = false;
-    }
-
-    if(mouse.x < dot.x + dot.width){
-        left = true;
-    }else{
-        left = false;
-    }
-
-    if(mouse.y < dot.y + dot.height){
-        top = true;
-    }else{
-        top = false;
-    }
-
-    if(mouse.y + mouse.height <= dot.y + dot.height){
-        bottom = true;
-    }else{
-        bottom = false;
-    }
-    if(mouse.x + mouse.width + mouse.dx > dot.x - dot.width &&//right side of square left side of dot
-        mouse.y < dot.y + dot.height &&//top of square bottom of dot
-        mouse.x < dot.x + dot.width &&
-        mouse.y + mouse.height <= dot.y + dot.height){
-            return true;
-    }
+function hitEnemy(sq1, sq2){
+    if(sq1.y < sq2.y + sq2.height &&//check square 1 top
+        sq1.y + sq1.height > sq2.y&&//check square 1 bottom
+        sq1.x < sq2.x + sq2.width &&//check square 1 left
+        sq1.x + sq1.width > sq2.x){//check square 1 right
+            console.log(sq2.dx);
+            
+        return true;
+   }
 }
 
 function update(dt){
-
     //player updates to use delta time
-    if(player.right){
+    if(player.moveRight){
         player.x += 1/2 * dt;
     }
-    if(player.left){
+    if(player.moveLeft){
         player.x -= 1/2 * dt;
     }
-    if(!player.left && !player.right){
+    if(!player.moveLeft && !player.moveRight){
         player.dx = 0;
     }
     player.update();
@@ -235,20 +227,29 @@ function render(){
     ctx.fillStyle = 'green';
     ctx.fill();
 
-
     //draw burrow
     ctx.closePath();
     ctx.beginPath();
     ctx.rect(0, ground, canvas.width, canvas.height);
-    ctx.fillStyle = 'brown';
+    ctx.fillStyle = 'saddlebrown';
     ctx.fill();
 
+    //draw player
     player.draw();
+    
+    //draw food
     for (let i = 0; i < foodArray.length; i++) {
         foodArray[i].draw();
     }
+
+    //draw enemies
     for (let i = 0; i < enemyArray.length; i++) {
         enemyArray[i].draw();
+    }
+
+    //draw family
+    for (let i = 0; i < familyArray.length; i++) {
+        familyArray[i].draw();
     }
 }
 
@@ -266,13 +267,10 @@ function animate(){
 window.onload = function(){
     player = new Player();
     animate();
-    //Important!
-    //creating a setinterval is bad because its continously creating setIntervals
+    //since this is on load we only have one setinterval which makes this object creation not bad
     //maybe we use delta time in the update function to create these objects
     setInterval(()=>{
         if(foodArray.length < 50){
-            console.log(Math.random() * 100 + 350);
-            
             foodArray.push(new Food(randomInt(canvas.width/2, canvas.width/1.35), randomInt(ground-100,ground-20), ballRadius));
         }
     }, 500);
@@ -285,17 +283,25 @@ window.onload = function(){
             if(randomInt(0,1) == 0){
                 enemyArray.push(new Enemy(randomInt(leftBounds, 0), 5));
             }else{
+                console.log('in this');
+                
                 enemyArray.push(new Enemy(randomInt(canvas.width, rightBounds), -5));
             }
         }
-    }, 5000);
+    }, 1000);
+
+    familyArray.push(new Family());
 };
 
 document.addEventListener('keydown', (e)=>{
-    if(e.keyCode == 39 && player.right == false){//right
+    if(e.keyCode == 39){//right
+        player.moveRight = true;
         player.right = true;
+        player.left = false;
     }
-    if(e.keyCode == 37 && player.left == false){//left
+    if(e.keyCode == 37){//left
+        player.moveLeft = true;
+        player.right = false;
         player.left = true;
     }
     if(e.keyCode == 38 && player.jumped == false){//up
@@ -304,10 +310,10 @@ document.addEventListener('keydown', (e)=>{
 });
 document.addEventListener('keyup', (e)=>{
     if(e.keyCode == 39){//right
-        player.stopRight();
+        player.moveRight = false;
     }
     if(e.keyCode == 37){//left
-        player.stopLeft();
+        player.moveLeft= false;
     }
 });
 
