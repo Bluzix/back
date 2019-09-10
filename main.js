@@ -100,6 +100,12 @@ class Player{
         this.dy = -20;
         this.jumped = true;
     }
+    fall(){
+      // can only fall when rising
+      if (this.dy < 0){
+        this.dy = this.dy * 0.2; // setting it to zero made it too...magentic
+      }
+    }
 }
 
 class Enemy{
@@ -191,7 +197,7 @@ function update(){
         if(hitDot(player, foodArray[i])){
             foodArray.splice(i, 1);
         }
-    }        
+    }
 
     for (let i = 0; i < enemyArray.length; i++) {
         enemyArray[i].update();
@@ -199,7 +205,7 @@ function update(){
         if(hitEnemy(player, enemyArray[i]) || enemyArray[i].x > canvas.height + 1000 || enemyArray[i].x < -1500){
             enemyArray.splice(i, 1);
             console.log(enemyArray);
-            
+
         }
     }
 }
@@ -231,12 +237,12 @@ window.onload = function(){
     }, 1000);
 
     setInterval(()=>{
-        //also add enemies, maybe a different interval        
+        //also add enemies, maybe a different interval
         //we need to check where the player is
         //get random position for either side of the screen
         let leftRandom = Math.random() * -100 + -1000;
         let rightRandom = Math.random() * canvas.width + (canvas.width+500);
-        if(Math.random() > 0.5){            
+        if(Math.random() > 0.5){
             enemyArray.push(new Enemy(leftRandom, 5));
         }else{
             enemyArray.push(new Enemy(rightRandom, -5));
@@ -261,6 +267,9 @@ document.addEventListener('keyup', (e)=>{
     }
     if(e.keyCode == 37){//left
         player.stopLeft();
+    }
+    if(e.keyCode == 38){//up
+      player.fall();
     }
 });
 
