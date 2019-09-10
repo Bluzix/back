@@ -9,6 +9,9 @@ let canvas,
 var porcupine = new Image();
 porcupine.src = "porcupine.png";
 
+var bush = new Image();
+bush.src = "bush.png";
+
 canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -229,9 +232,8 @@ function render(){
     //draw foodarea
     ctx.closePath();
     ctx.beginPath();
-    ctx.rect(canvas.width/2, ground-100-ballRadius, canvas.width/4, 100+ballRadius*2);
-    ctx.fillStyle = 'green';
-    ctx.fill();
+    // using an image for the bush
+    ctx.drawImage(bush, canvas.width/2, ground-100-ballRadius, canvas.width/4, 100+ballRadius*2);
 
     //draw burrow
     ctx.closePath();
